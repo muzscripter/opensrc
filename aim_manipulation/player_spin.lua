@@ -12,5 +12,3 @@ while tick() < startTime + spinTime do
     humanoid.RootPart.CFrame = humanoid.RootPart.CFrame * CFrame.Angles(0, math.rad(spinSpeed * delta), 0) 
     wait()
 end
-
-humanoid.WalkSpeed = 16 -- reset the character's walkspeed
