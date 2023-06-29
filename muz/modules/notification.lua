@@ -1,5 +1,3 @@
-print([[DIVIDER =======================================]])
-
 if not game:GetService('CoreGui'):FindFirstChild('NotiCache') then
     local Folder = Instance.new('Folder', game:GetService('CoreGui'))
     Folder.Name = 'NotiCache'
