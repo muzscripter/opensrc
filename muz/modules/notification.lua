@@ -130,3 +130,5 @@ function Notify:Send()
 
     table.remove(Notify.Positions, table.find(Notify.Positions, self))
 end
+
+return Notify
