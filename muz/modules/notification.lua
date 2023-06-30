@@ -1,9 +1,12 @@
+-- [[ created by muz ]]
+-- made for muz.wtf
+
 if not game:GetService('CoreGui'):FindFirstChild('NotiCache') then
     local Folder = Instance.new('Folder', game:GetService('CoreGui'))
-    Folder.Name = 'NotiCache'
+    Folder.Name = '_NOTIFICATION_CACHE'
 end
 
-for i,v in pairs(game:GetService('CoreGui').NotiCache:GetChildren()) do
+for i,v in pairs(game:GetService('CoreGui')['_NOTIFICATION_CACHE']:GetChildren()) do
     if v:IsA("ScreenGui") then
         v:Destroy()
     end
@@ -12,21 +15,34 @@ end
 local TweenService = game:GetService("TweenService")
 
 local Notify = {}
-Notify.__index = Notify
 
-Notify.Positions = {}
+Notify.__index = Notify
+Notify.Cache = {}
+Notify.Offset = 75
+
+local function InsCache(Inst)
+    if (not Inst) then
+        return
+    end
+
+    if not table.find(Notify.Cache, Inst) then
+        table.insert(Notify.Cache, Inst)
+    end
+
+    return
+end
 
 function Notify.new(Settings)
     local self = setmetatable({}, Notify)
-    
+
     self.gui = Instance.new("ScreenGui")
     self.gui.Name = "Notification"
-    self.gui.Parent = game:GetService('CoreGui').NotiCache
+    self.gui.Parent = game:GetService('CoreGui')['_NOTIFICATION_CACHE']
 
     self.frame = Instance.new("Frame")
     self.frame.BackgroundColor3 = Color3.new(0.552941, 0.701960, 1)
     self.frame.BackgroundTransparency = 0.15000000596046448
-    self.frame.Position = UDim2.new(1, -260, 0.0200031605, 0)
+    self.frame.Position = UDim2.new(1, -260, 0, 0)
     self.frame.Size = UDim2.new(0, 252, 0, 60)
     self.frame.Visible = true
     self.frame.Parent = self.gui
@@ -87,7 +103,7 @@ function Notify.new(Settings)
 
     self.message = Instance.new("TextLabel")
     self.message.Font = Enum.Font.SourceSans
-    self.message.Text = Settings.Message or 'This notification had no message.'
+    self.message.Text = Settings.Message or 'This notification has no message.'
     self.message.TextColor3 = Color3.new(1, 1, 1)
     self.message.TextScaled = true
     self.message.TextSize = 14
@@ -101,34 +117,51 @@ function Notify.new(Settings)
     self.message.Name = "Message"
     self.message.Parent = self.frame
 
-    local notificationCount = #Notify.Positions
-    local offsetY = 70 * notificationCount
-    self.frame.Position = UDim2.new(1, -260, 0.0200031605, offsetY)
-    
     return self
 end
 
 function Notify:Send()
-    table.insert(Notify.Positions, self)
+    InsCache(self)
+
+    local IntRatio = 5
+    local CacheIndex = #Notify.Cache
+    local Offset = (CacheIndex - 1) * Notify.Offset
+
+    local PositionTweenTo = UDim2.new(1, -260, 0, Offset)
+    if CacheIndex >= 1 then
+        PositionTweenTo = UDim2.new(1, -260, 0, Offset)
+    else
+        PositionTweenTo = UDim2.new(1, -260 + IntRatio, 0, Offset)
+    end
 
     local Info = TweenInfo.new(0.5, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
-    local TweenIn = TweenService:Create(self.frame, Info, {Position = UDim2.new(1, -260, 0.0252631605, 0)})
+    local TweenIn = TweenService:Create(self.frame, Info, {Position = PositionTweenTo})
     TweenIn:Play()
 
     local Duration = self.Duration or 3
 
-    wait(Duration)
+    task.delay(Duration, function()
+        local tweenInfo = TweenInfo.new(0.5, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
+        local TweenOut = TweenService:Create(self.frame, tweenInfo, {BackgroundTransparency = 1})
+        local TweenOut2 = TweenService:Create(self.frame, Info, {Position = UDim2.new(1, -260, -0.0252631605, 0)})
 
-    local tweenInfo = TweenInfo.new(0.5, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
-    local TweenOut = TweenService:Create(self.frame, tweenInfo, {BackgroundTransparency = 1})
-    local TweenOut2 = TweenService:Create(self.frame, Info, {Position = UDim2.new(1, -260, -0.0252631605, 0)})
-    TweenOut:Play()
-    TweenOut2:Play()
-    TweenOut.Completed:Connect(function()
-        self.gui.Enabled = false
+        TweenOut:Play()
+        TweenOut2:Play()
+
+        TweenOut.Completed:Connect(function()
+            self.gui.Enabled = false
+            for i, v in ipairs(Notify.Cache) do
+                if v == self then
+                    table.remove(Notify.Cache, i)
+                    break
+                end
+            end
+
+            for i, v in ipairs(Notify.Cache) do
+                local OffsetTweenTo = UDim2.new(1, -260, 0, (i - 1) * Notify.Offset)
+                local OffsetTween = TweenService:Create(v.frame, Info, {Position = OffsetTweenTo})
+                OffsetTween:Play()
+            end
+        end)
     end)
-
-    table.remove(Notify.Positions, table.find(Notify.Positions, self))
 end
-
-return Notify
