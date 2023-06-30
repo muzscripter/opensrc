@@ -165,3 +165,5 @@ function Notify:Send()
         end)
     end)
 end
+
+return Notify
